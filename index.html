@@ -238,18 +238,24 @@
 
         // Delete message
         function deleteMessage(index) {
-            let messages = JSON.parse(localStorage.getItem('messages')) || [];
-            messages.splice(index, 1);
-            localStorage.setItem('messages', JSON.stringify(messages));
+    const messages = JSON.parse(localStorage.getItem('messages')) || [];
 
-            // Reload the message list
-            messageList.innerHTML = '';
-            messages.forEach((message, i) => addMessageToList(message, i));
+    // Remove the message from the messages array
+    messages.splice(index, 1);
+    
+    // Update localStorage with the modified messages array
+    localStorage.setItem('messages', JSON.stringify(messages));
 
-            // Clear displayed message and comments
-            openedMessage.textContent = "Open a message to view it here.";
-            commentSection.innerHTML = '';
-        }
+    // Clear the sidebar and reload the updated messages list
+    messageList.innerHTML = '';
+    messages.forEach((message, idx) => addMessageToList(message, idx));
+
+    // Check if the currently displayed message is the one being deleted
+    if (openedMessage.textContent === messages[index]) {
+        // Clear the message display area if the deleted message is currently shown
+        openedMessage.textContent = "Open a message to view it here.";
+    }
+}
     </script>
 </body>
 </html>
