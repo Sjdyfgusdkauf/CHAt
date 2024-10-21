@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Board</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #e5ddd5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            height: 600px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            display: flex;
+        }
+
+        .sidebar {
+            width: 30%;
+            background-color: #93C572; /* WhatsApp-like green */
+            color: white;
+            padding: 20px;
+            border-right: 1px solid #ccc;
+        }
+
+        .sidebar h2 {
+            margin: 0;
+            font-size: 22px;
+            padding-bottom: 10px;
+        }
+
+        .message-list {
+            margin-top: 20px;
+            list-style-type: none;
+            padding: 0;
+            height: 450px;
+            overflow-y: auto;
+        }
+
+        .message-list li {
+            padding: 10px;
+            background: #128C7E;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .message-list li:hover {
+            background: #25D366;
+        }
+
+        .main-section {
+            width: 70%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-display {
+            flex: 1;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #ccc;
+            overflow-y: auto;
+            font-size: 18px;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 10px;
+            background-color: #fff;
+        }
+
+        .input-area textarea {
+            width: 85%;
+            height: 50px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            padding: 10px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        .input-area button {
+            width: 15%;
+            background-color: #93C572;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .input-area button:hover {
+            background-color: #128C7E;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar for message list -->
+        <div class="sidebar">
+            <h2>Let's Chat</h2>
+            <ul class="message-list" id="messageList">
+                <!-- Messages will be dynamically added here -->
+            </ul>
+        </div>
+
+        <!-- Main section for message display and input -->
+        <div class="main-section">
+            <div class="message-display" id="messageDisplay">
+                <!-- Opened message will be displayed here -->
+                <p id="openedMessage">Open a message to view it here.</p> 
+                <p>  &copy Copyright Let'sChat</p>
+            </div>
+            <div class="input-area">
+                <textarea id="messageInput" placeholder="Type your message..."></textarea>
+                <button id="submitMessage">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const messageList = document.getElementById('messageList');
+        const messageDisplay = document.getElementById('messageDisplay');
+        const openedMessage = document.getElementById('openedMessage');
+        const messageInput = document.getElementById('messageInput');
+        const submitMessageButton = document.getElementById('submitMessage');
+
+        // Load messages from local storage and display in sidebar
+        window.onload = function() {
+            const messages = JSON.parse(localStorage.getItem('messages')) || [];
+            messages.forEach((message, index) => addMessageToList(message, index));
+        };
+
+        // Add message to sidebar list
+        function addMessageToList(message, index) {
+            const li = document.createElement('li');
+            li.textContent = "Message " + (index + 1);
+            li.onclick = function() {
+                openedMessage.textContent = message;
+            };
+            messageList.appendChild(li);
+        }
+
+        (function() {
+            const devtools = {
+                open: false,
+                orientation: null
+            };
+            const threshold = 160;
+            const emitEvent = (state, orientation) => {
+                window.dispatchEvent(new CustomEvent('devtoolschange', {
+                    detail: {
+                        open: state,
+                        orientation: orientation
+                    }
+                }));
+            };
+            const main = () => {
+                const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+                const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+                const orientation = widthThreshold ? 'vertical' : 'horizontal';
+
+                if (!(heightThreshold && widthThreshold) &&
+                    ((window.Firebug && window.Firebug.chrome && window.Firebug.chrome.isInitialized) || widthThreshold || heightThreshold)) {
+                    if (!devtools.open || devtools.orientation !== orientation) {
+                        emitEvent(true, orientation);
+                    }
+                    devtools.open = true;
+                    devtools.orientation = orientation;
+                } else {
+                    if (devtools.open) {
+                        emitEvent(false, null);
+                    }
+                    devtools.open = false;
+                    devtools.orientation = null;
+                }
+            };
+            main();
+            window.addEventListener('resize', main);
+        })();
+
+        // Handle message submission
+        submitMessageButton.onclick = function() {
+            const message = messageInput.value.trim();
+            if (message) {
+                const messages = JSON.parse(localStorage.getItem('messages')) || [];
+                messages.push(message);
+                localStorage.setItem('messages', JSON.stringify(messages));
+
+                // Update sidebar with new message
+                addMessageToList(message, messages.length - 1);
+
+                // Clear the input
+                messageInput.value = '';
+            }
+        };
+    </script>
+</body>
+</html>
