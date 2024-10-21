@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Message Board</title>
+    <title>CHAt</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -55,6 +55,9 @@
             margin-bottom: 10px;
             cursor: pointer;
             font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .message-list li:hover {
@@ -105,6 +108,20 @@
         .input-area button:hover {
             background-color: #128C7E;
         }
+
+        .delete-btn {
+            background: #ff5f5f;
+            border: none;
+            padding: 5px 10px;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .comment-input {
+            width: 100%;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -122,7 +139,10 @@
             <div class="message-display" id="messageDisplay">
                 <!-- Opened message will be displayed here -->
                 <p id="openedMessage">Open a message to view it here.</p> 
-                <p>  &copy Copyright Let'sChat</p>
+                <div id="commentSection">
+                    <!-- Comments will be added here -->
+                </div>
+                <p> &copy; Copyright Let'sChat</p>
             </div>
             <div class="input-area">
                 <textarea id="messageInput" placeholder="Type your message..."></textarea>
@@ -137,6 +157,7 @@
         const openedMessage = document.getElementById('openedMessage');
         const messageInput = document.getElementById('messageInput');
         const submitMessageButton = document.getElementById('submitMessage');
+        const commentSection = document.getElementById('commentSection');
 
         // Load messages from local storage and display in sidebar
         window.onload = function() {
@@ -148,49 +169,56 @@
         function addMessageToList(message, index) {
             const li = document.createElement('li');
             li.textContent = "Message " + (index + 1);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.classList.add('delete-btn');
+            deleteBtn.onclick = function() {
+                deleteMessage(index);
+            };
+
+            li.appendChild(deleteBtn);
             li.onclick = function() {
-                openedMessage.textContent = message;
+                displayMessage(message, index);
             };
             messageList.appendChild(li);
         }
 
-        (function() {
-            const devtools = {
-                open: false,
-                orientation: null
-            };
-            const threshold = 160;
-            const emitEvent = (state, orientation) => {
-                window.dispatchEvent(new CustomEvent('devtoolschange', {
-                    detail: {
-                        open: state,
-                        orientation: orientation
-                    }
-                }));
-            };
-            const main = () => {
-                const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-                const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-                const orientation = widthThreshold ? 'vertical' : 'horizontal';
+        // Display message and comment section
+        function displayMessage(message, index) {
+            openedMessage.textContent = message;
+            commentSection.innerHTML = `
+                <textarea id="commentInput" class="comment-input" placeholder="Add a comment..."></textarea>
+                <button onclick="addComment(${index})">Comment</button>
+            `;
 
-                if (!(heightThreshold && widthThreshold) &&
-                    ((window.Firebug && window.Firebug.chrome && window.Firebug.chrome.isInitialized) || widthThreshold || heightThreshold)) {
-                    if (!devtools.open || devtools.orientation !== orientation) {
-                        emitEvent(true, orientation);
-                    }
-                    devtools.open = true;
-                    devtools.orientation = orientation;
-                } else {
-                    if (devtools.open) {
-                        emitEvent(false, null);
-                    }
-                    devtools.open = false;
-                    devtools.orientation = null;
-                }
-            };
-            main();
-            window.addEventListener('resize', main);
-        })();
+            // Load existing comments
+            const comments = JSON.parse(localStorage.getItem(`comments_${index}`)) || [];
+            comments.forEach(comment => {
+                const p = document.createElement('p');
+                p.textContent = comment;
+                commentSection.appendChild(p);
+            });
+        }
+
+        // Add a new comment
+        function addComment(index) {
+            const commentInput = document.getElementById('commentInput');
+            const comment = commentInput.value.trim();
+            if (comment) {
+                const comments = JSON.parse(localStorage.getItem(`comments_${index}`)) || [];
+                comments.push(comment);
+                localStorage.setItem(`comments_${index}`, JSON.stringify(comments));
+
+                // Display the comment
+                const p = document.createElement('p');
+                p.textContent = comment;
+                commentSection.appendChild(p);
+
+                // Clear input
+                commentInput.value = '';
+            }
+        }
 
         // Handle message submission
         submitMessageButton.onclick = function() {
@@ -207,6 +235,21 @@
                 messageInput.value = '';
             }
         };
+
+        // Delete message
+        function deleteMessage(index) {
+            let messages = JSON.parse(localStorage.getItem('messages')) || [];
+            messages.splice(index, 1);
+            localStorage.setItem('messages', JSON.stringify(messages));
+
+            // Reload the message list
+            messageList.innerHTML = '';
+            messages.forEach((message, i) => addMessageToList(message, i));
+
+            // Clear displayed message and comments
+            openedMessage.textContent = "Open a message to view it here.";
+            commentSection.innerHTML = '';
+        }
     </script>
 </body>
 </html>
